@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>Thermo-Control</title>
+  <link rel="manifest" href="webmanifest.json">
+  <script src="common.js"></script>
+
+  <style>
+    body {
+      background-image: url("kim.png");
+      background-repeat: no-repeat;
+      background-attachment: fixed;
+      background-size: cover;
+    }
+
+    .top_button {
+      display: inline-block;
+      padding: 10px 50px 10px 50px;
+      border-style: solid;
+      border-color: transparent;
+    }
+
+    .bottom_button {
+      display: inline-block;
+      padding: 50px 10px 50px 10px;
+    }
+
+    .text {
+      font-family: 'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif;
+      color: white;
+      font-size: 110px;
+    }
+
+    .smalltext {
+      font-family: 'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif;
+      color: black;
+      font-size: 40px;
+    }
+
+    .temperature {
+      display: inline-block;
+    }
+
+    .top_container,
+    .bottom_container {
+      width: 100%;
+      text-align: center;
+    }
+
+    .temp_widget {
+      border-style: solid;
+      border-color: white;
+      border-width: 5px;
+      padding-top: 40px;
+    }
+
+    .center {
+      text-align: center;
+    }
+  </style>
+
+</head>
+
+<body onload="start()">
+
+  <script>
+
+    var wWebSocketFirstFloor;
+    var wWebSocketBasement;
+
+    var firstfloor = {
+      websocket: null,
+      power_on: true
+    }
+
+    var basement = {
+      websocket: null,
+      power_on: true
+    }
+
+    function start() {
+      try {
+        wWebSocketFirstFloor = new WebSocket("wss://spoluck.ca/wsffac");
+        wWebSocketBasement = new WebSocket("wss://spoluck.ca/wsbaseac");
+        firstfloor.websocket = wWebSocketFirstFloor;
+        basement.websocket = wWebSocketBasement;
+      }
+      catch (exc) {
+        console.log(exc.message);
+      }
+      wWebSocketFirstFloor.onmessage = function (evt) { parseMessage(evt, "firstfloor_"); };
+      wWebSocketBasement.onmessage = function (evt) { parseMessage(evt, "basement_"); };
+    }
+
+    function parseMessage(evt, floor) {
+      console.log(evt.data);
+      var wCommand = evt.data.split(",");
+      if (wCommand.length == 3) {
+        document.getElementById(floor + 'temperature').innerHTML = wCommand[1] + "&deg;C";
+        if (wCommand[0] == "HpMode.HEATING") {
+          document.getElementById(floor + 'cooling').style.borderColor = "transparent";
+          document.getElementById(floor + 'heating').style.borderColor = "white";
+        }
+        else if (wCommand[0] == "HpMode.COOLING") {
+          document.getElementById(floor + 'cooling').style.borderColor = "white";
+          document.getElementById(floor + 'heating').style.borderColor = "transparent";
+        }
+        if (wCommand[2] == "on") {
+          document.getElementById(floor + 'onoff').src = "ON.png";
+          floordata[floor + 'data'].power_on = true;
+        }
+        else if (wCommand[2] == "off") {
+          document.getElementById(floor + 'onoff').src = "OFF.png";
+          floordata[floor + 'data'].power_on = false;
+        }
+      }
+    }
+
+    var floordata = {
+      firstfloor_data: firstfloor,
+      basement_data: basement
+    }
+
+    function toggle_on_off(floor) {
+      floor.websocket.send(!floor.power_on ? "on" : "off");
+    }
+
+  </script>
+
+  <div class="text" style="position: absolute; left: 80px; top: 155px">First Floor</div>
+  <div class="smalltext" style="position: absolute; left: 70px; top: 370px">Temperature</div>
+  <div class="smalltext" style="position: absolute; left: 435px; top: 400px">Mode</div>
+  <div class="text" style="position: absolute; left: 400px; top: 945px">Basement</div>
+  <div class="smalltext" style="position: absolute; left: 635px; top: 1160px">Temperature</div>
+  <div class="smalltext" style="position: absolute; left: 110px; top: 1190px">Mode</div>
+
+</body>
+
+</html>

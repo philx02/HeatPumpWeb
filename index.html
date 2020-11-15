@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>Thermo-Control</title>
+  <link rel="manifest" href="webmanifest.json">
+  <script src="common.js"></script>
+
+  <style>
+    body {
+      background-image: url("background.png");
+      background-repeat: no-repeat;
+      background-attachment: fixed;
+      background-size: cover;
+    }
+
+    .top_button {
+      display: inline-block;
+      padding: 10px 50px 10px 50px;
+      border-style: solid;
+      border-color: transparent;
+    }
+
+    .bottom_button {
+      display: inline-block;
+      padding: 50px 10px 50px 10px;
+    }
+
+    .text {
+      font-family: Consolas;
+      color: white;
+      font-size: 140px;
+    }
+
+    .temperature {
+      display: inline-block;
+    }
+
+    .top_container,
+    .bottom_container {
+      width: 100%;
+      text-align: center;
+    }
+
+    .temp_widget {
+      border-style: solid;
+      border-color: white;
+      border-width: 5px;
+      padding-top: 40px;
+    }
+
+    .center {
+      text-align: center;
+    }
+  </style>
+
+</head>
+
+<body onload="start()">
+
+  <script>
+
+    var wWebSocketFirstFloor;
+    var wWebSocketBasement;
+
+    var firstfloor = {
+      websocket: null,
+      power_on: true
+    }
+
+    var basement = {
+      websocket: null,
+      power_on: true
+    }
+
+    function start() {
+      try {
+        wWebSocketFirstFloor = new WebSocket("wss://spoluck.ca/wsffac");
+        wWebSocketBasement = new WebSocket("wss://spoluck.ca/wsbaseac");
+        firstfloor.websocket = wWebSocketFirstFloor;
+        basement.websocket = wWebSocketBasement;
+      }
+      catch (exc) {
+        console.log(exc.message);
+      }
+      wWebSocketFirstFloor.onmessage = function (evt) { parseMessage(evt, "firstfloor_"); };
+      wWebSocketBasement.onmessage = function (evt) { parseMessage(evt, "basement_"); };
+    }
+
+    function parseMessage(evt, floor) {
+      console.log(evt.data);
+      var wCommand = evt.data.split(",");
+      if (wCommand.length == 3) {
+        document.getElementById(floor + 'temperature').innerHTML = wCommand[1] + "&deg;C";
+        if (wCommand[0] == "HpMode.HEATING") {
+          document.getElementById(floor + 'cooling').style.borderColor = "transparent";
+          document.getElementById(floor + 'heating').style.borderColor = "white";
+        }
+        else if (wCommand[0] == "HpMode.COOLING") {
+          document.getElementById(floor + 'cooling').style.borderColor = "white";
+          document.getElementById(floor + 'heating').style.borderColor = "transparent";
+        }
+        if (wCommand[2] == "on") {
+          document.getElementById(floor + 'onoff').src = "ON.png";
+          floordata[floor + 'data'].power_on = true;
+        }
+        else if (wCommand[2] == "off") {
+          document.getElementById(floor + 'onoff').src = "OFF.png";
+          floordata[floor + 'data'].power_on = false;
+        }
+      }
+    }
+
+    var floordata = {
+      firstfloor_data: firstfloor,
+      basement_data: basement
+    }
+
+    function toggle_on_off(floor) {
+      floor.websocket.send(!floor.power_on ? "on" : "off");
+    }
+
+  </script>
+
+  <div class="temp_widget text center">
+    FIRST FLOOR
+    <div><img id="firstfloor_onoff" src="OFF.png" width="300" onclick='toggle_on_off(firstfloor);'></div>
+    <div class="top_container">
+      <div id="firstfloor_heating" class="top_button">
+        <button onclick='wWebSocketFirstFloor.send("heating");'><img src="heating.png" /></button>
+      </div>
+      <div id="firstfloor_cooling" class="top_button">
+        <button onclick='wWebSocketFirstFloor.send("cooling");'><img src="cooling.png" /></button>
+      </div>
+    </div>
+
+    <div class="bottom_container">
+      <div class="bottom_button">
+        <button onclick='wWebSocketFirstFloor.send("minus");'><img src="minus.png" /></button>
+      </div>
+      <div class="temperature text" id="firstfloor_temperature">
+        --&deg;C
+      </div>
+      <div class="bottom_button">
+        <button onclick='wWebSocketFirstFloor.send("plus");'><img src="plus.png" /></button>
+      </div>
+    </div>
+  </div>
+
+  <div class="temp_widget text center">
+    BASEMENT
+    <div><img id="basement_onoff" src="OFF.png" width="300" onclick='toggle_on_off(basement);'></div>
+    <div class="top_container">
+      <div id="basement_heating" class="top_button">
+        <button onclick='wWebSocketBasement.send("heating");'><img src="heating.png" /></button>
+      </div>
+      <div id="basement_cooling" class="top_button">
+        <button onclick='wWebSocketBasement.send("cooling");'><img src="cooling.png" /></button>
+      </div>
+    </div>
+
+    <div class="bottom_container">
+      <div class="bottom_button">
+        <button onclick='wWebSocketBasement.send("minus");'><img src="minus.png" /></button>
+      </div>
+      <div class="temperature text" id="basement_temperature">
+        --&deg;C
+      </div>
+      <div class="bottom_button">
+        <button onclick='wWebSocketBasement.send("plus");'><img src="plus.png" /></button>
+      </div>
+    </div>
+  </div>
+
+</body>
+
+</html>
