@@ -5,6 +5,7 @@
   <title>Thermo-Control</title>
   <link rel="manifest" href="webmanifest.json">
   <script src="common.js"></script>
+  <script src="pulltorefresh.js"></script>
 
   <style>
     body {
@@ -59,6 +60,14 @@
 <body onload="start()">
 
   <script>
+  
+    /* global PullToRefresh */
+    const ptr = PullToRefresh.init({
+      mainElement: 'body',
+      onRefresh() {
+        window.location.reload();
+      }
+    });
 
     var wWebSocketFirstFloor;
     var wWebSocketBasement;
