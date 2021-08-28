@@ -92,6 +92,12 @@
       catch (exc) {
         console.log(exc.message);
       }
+      wWebSocketFirstFloor.onopen = function(e) {
+        wWebSocketFirstFloor.send("refresh");
+      };
+      wWebSocketBasement.onopen = function(e) {
+        wWebSocketBasement.send("refresh");
+      };
       wWebSocketFirstFloor.onmessage = function (evt) { parseMessage(evt, "firstfloor_"); };
       wWebSocketBasement.onmessage = function (evt) { parseMessage(evt, "basement_"); };
     }
